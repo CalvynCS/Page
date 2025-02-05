@@ -1,0 +1,60 @@
+image: alpine:latest
+
+stages:
+  - create_dev_calvyn
+  - create_dev
+  - deploy
+
+variables:
+  GIT_STRATEGY: clone
+  BASE_BRANCH: "main"
+  DEV_CALVYN_BRANCH: "dev_calvyn"
+  DEV_BRANCH: "dev"
+
+before_script:
+  - git config --global user.email "calvynchandrasatria@gmail.com"
+  - git config --global user.name "calvyn chandra satria"
+
+create_dev_calvyn_branch:
+  stage: create_dev_calvyn
+  script:
+    - echo "Checking if branch $DEV_CALVYN_BRANCH exists..."
+    - |
+      if git ls-remote --heads origin $DEV_CALVYN_BRANCH | grep $DEV_CALVYN_BRANCH; then
+        echo "Branch $DEV_CALVYN_BRANCH already exists. Pulling latest changes..."
+        git checkout $DEV_CALVYN_BRANCH
+        git pull origin $DEV_CALVYN_BRANCH
+      else
+        echo "Creating new branch $DEV_CALVYN_BRANCH from $BASE_BRANCH"
+        git checkout -b $DEV_CALVYN_BRANCH $BASE_BRANCH
+        git push origin $DEV_CALVYN_BRANCH
+      fi
+  only:
+    - main
+
+create_dev_branch:
+  stage: create_dev
+  script:
+    - echo "Checking if branch $DEV_BRANCH exists..."
+    - |
+      if git ls-remote --heads origin $DEV_BRANCH | grep $DEV_BRANCH; then
+        echo "Branch $DEV_BRANCH already exists. Pulling latest changes..."
+        git checkout $DEV_BRANCH
+        git pull origin $DEV_BRANCH
+      else
+        echo "Creating new branch $DEV_BRANCH from $DEV_CALVYN_BRANCH"
+        git checkout -b $DEV_BRANCH $DEV_CALVYN_BRANCH
+        git push origin $DEV_BRANCH
+      fi
+  only:
+    - dev_calvyn
+
+deploy_to_dev:
+  stage: deploy
+  script:
+    - echo "Deploying to $DEV_BRANCH"
+    - git checkout $DEV_BRANCH
+    - git merge $DEV_CALVYN_BRANCH
+    - git push origin $DEV_BRANCH
+  only:
+    - dev_calvyn
