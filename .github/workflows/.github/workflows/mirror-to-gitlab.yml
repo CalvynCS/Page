@@ -1,0 +1,24 @@
+name: Mirror to GitLab
+on:
+  push:
+    branches:
+      - main  # Hanya menjalankan jika ada perubahan di main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
+
+      - name: Push to GitLab
+        run: |
+          git remote add gitlab git@gitlab.com:arc2543106/web.git
+          git push --mirror gitlab
